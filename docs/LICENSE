@@ -1,0 +1,35 @@
+// -------------------------------------------------------------
+//
+// !\file LICENSE
+// !\brief Custom license for this repository
+// !\author Colin J.D. Stewart
+//
+// -------------------------------------------------------------
+//
+//             Copyright (c) 2025. Colin J.D. Stewart
+//                     All rights reserved
+//
+// -------------------------------------------------------------
+
+Permission is hereby granted to use the code in this repository for
+commercial and non-commercial purposes, provided that all of the following
+conditions are met:
+
+1. Attribution:
+   - You must give appropriate credit to the original author, Colin J.D. Stewart.
+   - You must include a copy of this license in any distributed version of the code.
+
+2. No Forking or Code Reuse:
+   - You may not fork this repository or copy substantial parts of the code
+     into other public or private projects.
+
+3. Contributions:
+   - You may create improvements, fixes, or enhancements to the code.
+   - These must be submitted directly as contributions (e.g. pull requests) to this repository.
+   - Any such contributions become part of this project and are licensed under the same terms.
+
+4. Restrictions:
+   - You may not sublicense, sell, or distribute modified versions of the code independently.
+   - You may not obfuscate or relicense this software under other terms.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
