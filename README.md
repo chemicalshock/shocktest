@@ -94,5 +94,5 @@ project/
 │               └── shocktest.hpp
 └── src/
     └── tst/
-        └── my_test.cpp
+        └── test_nameofunit.cpp
 ```
