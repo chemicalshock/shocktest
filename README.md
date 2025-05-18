@@ -1,52 +1,98 @@
 # ShockTest
 
-**ShockTest** is a minimal, header-only C++ unit testing framework built for developers who want fast, elegant, dependency-free test organisation.
+ShockTest is a lightweight C++ unit testing framework designed for fast development, minimal boilerplate, and intuitive output. It is ideal for embedding directly into small or medium-sized projects without complex dependencies.
 
-Created by **Colin J.D. Stewart**  
-Version: `0.1.0`
+## Features
 
----
+- Single-header, dependency-free framework.
+- Automatic `main()` inclusion (can be disabled).
+- Simple macro-based test definitions.
+- Optional `EXPECT_*` macros for expressive assertions.
+- Coloured output with pass/fail status.
+- Support for exception-based tests using `EXPECT_THROW`.
 
-## 🚀 Features
+## Quick Start
 
-- Header-only
-- Simple macros: `TEST()`, `EXPECT_EQ()`, `EXPECT_TRUE()`
-- Multiple test cases per file
-- Coloured output (Windows/Linux)
-- Fully cross-platform
+### Include the header
 
----
-
-## ✍️ Example
+Place `shocktest.hpp` in your project (typically under `dep/shocktest/src/inc`) and include it in your test files:
 
 ```cpp
 #include "shocktest.hpp"
-
-TEST(my_basic_case) {
-    EXPECT_TRUE(1);
-    EXPECT_EQ(2 + 2, 4);
-}
-
-int main() {
-    return shocktest::run_all();
-}
 ```
 
----
-
-## 🔧 Integration
-
-Place `shocktest/src/inc/shocktest.hpp` somewhere accessible and add to your include path.
-
-In your project:
+If you're already defining `main()` yourself, define the following before inclusion:
 
 ```cpp
-#include "../../shocktest/src/inc/shocktest.hpp"
+#define SHOCKTEST_CUSTOM_MAIN
 ```
 
----
+### Define a test
 
-## 📄 License
+```cpp
+SHOCKTEST("Maths basics") {
+    int a = 2 + 2;
+    EXPECT_EQ(a, 4);
+    EXPECT_NE(a, 5);
+}
+```
 
-Copyright (c) 2025  
-**Colin J.D. Stewart** – All rights reserved.
+### Compile
+
+Assuming you’re using `g++`:
+
+```sh
+g++ -std=c++17 -Ipath/to/shocktest test_file.cpp -o test_runner
+```
+
+Then run your tests:
+
+```sh
+./test_runner
+```
+
+## Exception Testing
+
+```cpp
+SHOCKTEST("Expect throw") {
+    EXPECT_THROW(throw std::runtime_error("error"), std::runtime_error);
+    EXPECT_THROW_MSG(throw std::logic_error("bad logic"), std::logic_error, "bad logic");
+}
+```
+
+## Output Example
+
+```
+[✓] Maths basics
+[✓] Expect throw
+
+All tests passed (2/2).
+```
+
+## Custom Main
+
+If you need to initialise something or wrap test execution, define your own main:
+
+```cpp
+#define SHOCKTEST_CUSTOM_MAIN
+#include "shocktest.hpp"
+
+int main() {
+    std::cout << "Running custom test suite...\n";
+    return shocktest::run_all_tests();
+}
+```
+
+## Directory Layout Suggestion
+
+```
+project/
+├── dep/
+│   └── shocktest/
+│       └── src/
+│           └── inc/
+│               └── shocktest.hpp
+└── src/
+    └── tst/
+        └── my_test.cpp
+```
