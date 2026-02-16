@@ -2,9 +2,6 @@
 # makefile for shocktest unit tests
 #
 
-# Keep compatibility with callers that invoke "make all".
-all: tests
-
 # ------------------------------
 # SUT targets (none yet)
 # ------------------------------

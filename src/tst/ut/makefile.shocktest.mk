@@ -5,6 +5,9 @@
 # Usage: make, make tests, make run, make clean
 # -------------------------------------------------------------
 
+# Keep compatibility with callers that invoke "make all".
+all: tests
+
 .DEFAULT_GOAL := tests
 ROOT_DIR := $(abspath ../../..)
 BUILD_DIR := $(CURDIR)/bld
