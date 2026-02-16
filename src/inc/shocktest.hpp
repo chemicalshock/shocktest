@@ -76,26 +76,38 @@ inline int run_all() {
 
         auto start = steady_clock::now();
         std::cout << LABEL_RUN << " " << weatherLabel << test.name << " ... " << std::endl << std::flush;
-        
+        bool threw = false;
+        std::string failure_message;
+
         try {
             test.func();
-            auto end = steady_clock::now();
-            auto dt = duration_cast<milliseconds>(end - start).count();
-            total_time_ms += dt;
-            std::cout << LABEL_PASS << " " << weatherLabel << test.name << " (" << dt << " ms)" << std::endl;
         } catch (const std::exception& e) {
-            auto end = steady_clock::now();
-            auto dt = duration_cast<milliseconds>(end - start).count();
-            total_time_ms += dt;
-            std::cout << "\n" << LABEL_FAIL << " " << weatherLabel << test.name 
-                      << " - " << e.what() << " (" << dt << " ms)" << std::endl;
-            ++failures;
+            threw = true;
+            failure_message = e.what();
         } catch (...) {
-            auto end = steady_clock::now();
-            auto dt = duration_cast<milliseconds>(end - start).count();
-            total_time_ms += dt;
-            std::cout << "\n" << LABEL_FAIL << " " << weatherLabel << test.name 
-                      << " - unknown error (" << dt << " ms)" << std::endl;
+            threw = true;
+            failure_message = "unknown error";
+        }
+
+        auto end = steady_clock::now();
+        auto dt = duration_cast<milliseconds>(end - start).count();
+        total_time_ms += dt;
+
+        const bool passed = test.expect_fail ? threw : !threw;
+        if (passed) {
+            std::cout << LABEL_PASS << " " << weatherLabel << test.name << " (" << dt << " ms)";
+            if (test.expect_fail) {
+                std::cout << " expected failure observed";
+            }
+            std::cout << std::endl;
+        } else {
+            std::cout << "\n" << LABEL_FAIL << " " << weatherLabel << test.name;
+            if (test.expect_fail) {
+                std::cout << " - expected failure but test passed";
+            } else {
+                std::cout << " - " << failure_message;
+            }
+            std::cout << " (" << dt << " ms)" << std::endl;
             ++failures;
         }
     }
@@ -165,9 +177,11 @@ inline int run_all() {
 //    
 #define EXPECT_NE(a, b) \
     do { \
-        if ((a) == (b)) { \
+        const auto& _a = (a); \
+        const auto& _b = (b); \
+        if (_a == _b) { \
             std::ostringstream oss; \
-            oss << "EXPECT_EQ failed: " #a " == " #b " (" << (a) << " vs " << (b) << ")"; \
+            oss << "EXPECT_NE failed: " #a " == " #b " (" << _a << " vs " << _b << ")"; \
             throw std::runtime_error(oss.str()); \
         } \
     } while(0)    
@@ -177,9 +191,11 @@ inline int run_all() {
 //    
 #define EXPECT_EQ(a, b) \
     do { \
-        if ((a) != (b)) { \
+        const auto& _a = (a); \
+        const auto& _b = (b); \
+        if (_a != _b) { \
             std::ostringstream oss; \
-            oss << "EXPECT_EQ failed: " #a " != " #b " (" << (a) << " vs " << (b) << ")"; \
+            oss << "EXPECT_EQ failed: " #a " != " #b " (" << _a << " vs " << _b << ")"; \
             throw std::runtime_error(oss.str()); \
         } \
     } while(0)
@@ -190,9 +206,11 @@ inline int run_all() {
 //    
 #define EXPECT_GE(a, b) \
     do { \
-        if (!((a) >= (b))) { \
+        const auto& _a = (a); \
+        const auto& _b = (b); \
+        if (!(_a >= _b)) { \
             std::ostringstream oss; \
-            oss << "EXPECT_GE failed: " #a " < " #b " (" << (a) << " vs " << (b) << ")"; \
+            oss << "EXPECT_GE failed: " #a " < " #b " (" << _a << " vs " << _b << ")"; \
             throw std::runtime_error(oss.str()); \
         } \
     } while(0)
@@ -202,9 +220,11 @@ inline int run_all() {
 //    
 #define EXPECT_GT(a, b) \
     do { \
-        if (!((a) > (b))) { \
+        const auto& _a = (a); \
+        const auto& _b = (b); \
+        if (!(_a > _b)) { \
             std::ostringstream _oss; \
-            _oss << "EXPECT_GT failed: " #a " is not greater than " #b " (" << (a) << " vs " << (b) << ")"; \
+            _oss << "EXPECT_GT failed: " #a " is not greater than " #b " (" << _a << " vs " << _b << ")"; \
             throw std::runtime_error(_oss.str()); \
         } \
     } while(0)
@@ -268,9 +288,11 @@ inline int run_all() {
 // ASSERT_EQ: Terminates the test if a != b.
 #define ASSERT_EQ(a, b) \
     do { \
-        if ((a) != (b)) { \
+        const auto& _a = (a); \
+        const auto& _b = (b); \
+        if (_a != _b) { \
             std::ostringstream oss; \
-            oss << "ASSERT_EQ failed: " #a " != " #b " (" << (a) << " vs " << (b) << ")"; \
+            oss << "ASSERT_EQ failed: " #a " != " #b " (" << _a << " vs " << _b << ")"; \
             throw std::runtime_error(oss.str()); \
         } \
     } while(0)
@@ -278,9 +300,11 @@ inline int run_all() {
 // ASSERT_GT: Terminates the test if a is not greater than b.
 #define ASSERT_GT(a, b) \
     do { \
-        if (!((a) > (b))) { \
+        const auto& _a = (a); \
+        const auto& _b = (b); \
+        if (!(_a > _b)) { \
             std::ostringstream oss; \
-            oss << "ASSERT_GT failed: " #a " <= " #b " (" << (a) << " vs " << (b) << ")"; \
+            oss << "ASSERT_GT failed: " #a " <= " #b " (" << _a << " vs " << _b << ")"; \
             throw std::runtime_error(oss.str()); \
         } \
     } while(0)
@@ -288,10 +312,13 @@ inline int run_all() {
 
 } // namespace shocktest
 
+#define SHOCKTEST_MAIN() \
+    int main() { \
+        return shocktest::run_all(); \
+    }
+
 #ifndef SHOCKTEST_CUSTOM_MAIN
-int main() {
-    return shocktest::run_all();
-}
+SHOCKTEST_MAIN()
 #endif
 
 #endif // SHOCKTEST_HPP

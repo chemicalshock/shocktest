@@ -22,7 +22,7 @@ namespace shockmock {
     template<typename T>
     class AutoMockGuard {
     public:
-        AutoMockGuard(T*& target_ptr, T* new_impl)
+        AutoMockGuard(T& target_ptr, T new_impl)
             : target(target_ptr), original(target_ptr)
         {
             target = new_impl;
@@ -30,12 +30,17 @@ namespace shockmock {
         ~AutoMockGuard() {
             target = original;
         }
+        AutoMockGuard(const AutoMockGuard&) = delete;
+        AutoMockGuard& operator=(const AutoMockGuard&) = delete;
     private:
-        T*& target;   //!< Reference to the function pointer to override.
-        T*  original; //!< The original function pointer.
+        T& target;   //!< Reference to the function pointer to override.
+        T  original; //!< The original function pointer.
     };
 
 } // namespace shockmock
+
+#define SHOCKMOCK_CONCAT_INNER(a, b) a##b
+#define SHOCKMOCK_CONCAT(a, b) SHOCKMOCK_CONCAT_INNER(a, b)
 
 // !\brief Declares a mockable global function pointer for a given function.
 // Usage example:
@@ -51,7 +56,7 @@ namespace shockmock {
 // Usage example:
 //     SHOCKMOCK_MOCK_OVERRIDE(parse_expression, my_mock_parse_expression);
 #define SHOCKMOCK_MOCK_OVERRIDE(fn, new_impl) \
-    shockmock::AutoMockGuard<decltype(shockmock::fn##_mock_ptr)> _autoMockGuard_##fn##__COUNTER__(shockmock::fn##_mock_ptr, new_impl)
+    shockmock::AutoMockGuard<decltype(shockmock::fn##_mock_ptr)> SHOCKMOCK_CONCAT(_autoMockGuard_##fn##_, __COUNTER__)(shockmock::fn##_mock_ptr, new_impl)
 
 // !\brief Calls the mockable function pointer.
 // Usage example:
