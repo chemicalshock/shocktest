@@ -1,93 +1,36 @@
 # Dependencies (`dep/`)
 
-This directory contains external dependencies used by the project.
+This directory is where external dependencies should be placed.
 
-The `dep/` folder is intentionally flexible. It may contain:
+## Current State
 
-- Git submodules
-- Symlinks to locally cloned repositories
-- Vendored third-party code
-- Header-only libraries
-- Internal shared components reused across projects
+`dep/` is currently empty (no active third-party dependencies).
 
-## Philosophy
+The project builds and runs unit tests using only:
 
-The main repository should remain focused on its own source code.
+- C++ standard library
+- local headers in `src/inc/`
 
-External components should live here to:
+## How `dep/` Is Used By Build Scripts
 
-- Keep ownership boundaries clear
-- Avoid mixing third-party code with project code
-- Allow version pinning per project
-- Enable clean upgrades or swaps
+- Root makefile scans `dep/*/src/inc` and adds include paths automatically.
+- A dependency include map is generated under `src/bld/depinc/`.
+- Unit-test makefile adds `-I$(ROOT_DIR)/dep` by default.
 
-## Recommended Approaches
+## Recommended Patterns
 
-### 1. Git Submodules (Reproducible)
+Use one of:
 
-Use submodules when you want the repository to fully define dependency versions.
+- git submodules (pinned/reproducible)
+- vendored source
+- local symlink during development
 
-Example:
+For any added dependency, include a short README in that dependency folder explaining:
 
-git submodule add <repo-url> dep/<name>
+- version/source
+- required build flags
+- update process
 
-Pros:
-- Fully reproducible
-- Version pinned
-- Easy CI integration
+## Keep Out
 
-Cons:
-- Slightly more workflow overhead
-
-
-### 2. Symlinks (Local Development)
-
-Use symlinks when developing multiple repositories together.
-
-Example:
-
-ln -s ~/projects/common-lib dep/common-lib
-
-Pros:
-- Rapid local iteration
-- No duplication
-- Clean separation of repositories
-
-Cons:
-- Not portable unless the target exists
-
-
-### 3. Vendoring
-
-For small or stable libraries, you may copy source directly into `dep/`.
-
-Pros:
-- Simple
-- No external fetch required
-
-Cons:
-- Manual update process
-
-
-## Build Expectations
-
-The build system should:
-
-- Include headers from `dep/`
-- Link against static or shared libraries located in `dep/`
-- Not assume a specific dependency strategy
-
-Each dependency should document its own build requirements.
-
-## Important
-
-This directory should not contain:
-
-- Project source code
-- Build artefacts
-- Temporary files
-
-Build output belongs in:
-
-- `src/bld/` (intermediate)
-- `/bld/` (final artefacts)
+Do not place build artefacts or temporary files in `dep/`.

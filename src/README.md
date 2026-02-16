@@ -1,58 +1,48 @@
 # Source Tree (`src/`)
 
-This directory contains all source code and test code for the project.
+`src/` contains the framework headers and tests for this repository.
 
-## Layout
+## Current Layout
 
-- `bin/`  
-  Entry points into the application or library.  
-  Typically contains `main.cpp` or thin integration layers.
+- `inc/`
+  - `shocktest.hpp`: header-only test framework
+  - `shockmock.hpp`: function-pointer mocking helpers
+- `tst/ut/`
+  - unit tests for framework behavior and mocking
+  - dedicated UT build system (`makefile` + `makefile.shocktest.mk`)
+  - binaries output to `src/tst/ut/bld/`
+- `tst/sy/`
+  - reserved for system/integration tests (currently placeholder only)
+- `bin/`, `lib/`
+  - present for project-template compatibility
+  - currently empty in this repository
+- `bld/`
+  - intermediate objects/dependency files from top-level builds
 
-- `inc/`  
-  Header files (`.h`, `.hpp`).  
-  Public interfaces and internal headers live here.
+## Build Notes
 
-- `lib/`  
-  Implementation source files (`.cpp`, `.c`).  
-  Core logic should live here rather than in `bin/`.
+- Unit tests are self-contained under `src/tst/ut/` and run via:
 
-- `bld/`  
-  Intermediate build artefacts for main targets.  
-  Contains object files and static libraries only.  
-  **Does not contain final executables.**
+```sh
+make ut
+```
 
-## Tests
+- Top-level `make` expects sources in `src/bin/` and/or `src/lib/`. Since those directories are currently empty, executable linking is not yet meaningful.
 
-Tests are structured by scope:
+## Include Guidance
 
-- `tst/ut/`  
-  Unit tests (small, isolated, fast).
-
-- `tst/sy/`  
-  System tests (integration-level, broader coverage).
-
-- `tst/bld/`  
-  Intermediate build artefacts for test targets  
-  (objects, test binaries, temporary outputs).
-
-## Final Output
-
-Final build artefacts (executables, shared libraries, packages) are placed in:
-
-## Include Order
-
-In C++ code files, include headers in this order:
+Recommended include grouping in C++ files:
 
 ```cpp
-// own header
+// own header first
 #include "myfile.hpp"
 
-// system
+// standard library
 #include <string>
 
-// internal
-#include "another_file.hpp"
+// project headers
+#include "shocktest.hpp"
 
-// external
-#include "dep1/somefile.hpp"
+// dependency headers
+#include "dep_name/header.hpp"
 ```

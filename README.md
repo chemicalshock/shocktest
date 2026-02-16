@@ -1,125 +1,91 @@
-# <ProjectName>
+# Shocktest
 
-Short one-paragraph description of what this project is and what problem it solves.
+`shocktest` is a lightweight, header-only C++ test framework with a weather-themed test model:
 
----
+- `GOODWEATHER` tests are expected to pass.
+- `BADWEATHER` tests are expected to fail (throw).
 
-## Overview
+The repository also includes `shockmock`, a small RAII-based function-pointer mocking helper intended for unit tests.
 
-This project follows a structured, modular C++ layout designed for:
+## Current Scope
 
-- Clear separation of source and build artefacts
-- Reusable components
-- Clean dependency management
-- Scalable test structure
-- Long-term maintainability
+This repo currently provides:
 
-The repository is suitable for both library-style and executable-style projects.
+- `src/inc/shocktest.hpp` (framework + assertions + optional auto-main)
+- `src/inc/shockmock.hpp` (mockable function-pointer helpers)
+- Unit tests under `src/tst/ut/`
 
----
+`SHOCKTEST_VERSION` in `src/inc/shocktest.hpp` is currently `0.2.0`.
 
-## Repository Structure
+## Repository Layout
 
-/bld Final build artefacts (executables, shared libraries)
-
-/dep External dependencies
-/docs Project documentation
-
-/src
-bin/ Entry points (e.g. main.cpp)
-inc/ Header files
-lib/ Implementation source files
-bld/ Intermediate build artefacts (objects, static libs)
-
-tst/
-ut/ Unit tests
-sy/ System tests
-bld/ Test build artefacts
-
-
-### Build Artefact Policy
-
-- `src/bld/` and `src/tst/bld/` contain intermediate compilation output.
-- `/bld` at the repository root contains final distributable artefacts.
-- Build output is not committed to the repository.
-
----
+- `src/inc/` public headers (`shocktest.hpp`, `shockmock.hpp`)
+- `src/tst/ut/` unit tests and UT makefiles
+- `src/tst/sy/` placeholder for system tests
+- `docs/` project docs (currently this README only)
+- `dep/` external dependency area
+- `bld/` final top-level build outputs
+- `src/bld/` intermediate main build outputs
 
 ## Requirements
 
-- C++ compiler (C++17 or C++20 recommended)
-- Make
-- POSIX-compatible environment (Linux, macOS, WSL, etc.)
+- `g++` (or another C++20-capable compiler)
+- `make`
+- POSIX shell environment
 
----
+## Build And Test
 
-## Build
+### Unit tests (recommended)
 
-### Default build
+```sh
+make ut
+```
 
+This builds and runs:
+
+- `TEST_SHOCKTEST_BEHAVIOR_UT`
+- `TEST_SHOCKMOCK_UT`
+- `TEST_CUSTOM_MAIN_UT`
+
+### Top-level project build
+
+```sh
 make
+```
 
-### Release build
+The root makefile is template-capable (exe/static/shared), but this repository currently has no sources in `src/bin/` or `src/lib/`. As a result, `make` may fail for executable linking until app/library sources are added.
 
-make MODE=release
+## Quick Usage
 
+Minimal example:
 
-### Run
+```cpp
+#include "shocktest.hpp"
 
-./bld/<ProjectName>
+SHOCKTEST_CASE(MyFirstTest) {
+    EXPECT_EQ(2 + 2, 4);
+}
+```
 
+Compile a test file directly:
 
----
+```sh
+g++ -std=c++20 -I./src/inc my_test.cpp -o my_test
+./my_test
+```
 
-## Testing
+If you want your own `main()`, define `SHOCKTEST_CUSTOM_MAIN` before including `shocktest.hpp`, then call `shocktest::run_all()`.
 
-Unit tests:
+## Assertion And Utility Highlights
 
-make tests
+`shocktest.hpp` includes:
 
+- Assertions: `EXPECT_*`, `ASSERT_*`
+- Exception checks: `EXPECT_THROW`, `EXPECT_NO_THROW`, `EXPECT_THROW_MSG`
+- Stream capture checks: `EXPECT_STDCOUT`, `EXPECT_STDCERR`
 
-System tests may require additional configuration depending on project scope.
+## Related Docs
 
----
-
-## Dependencies
-
-External components are located in `/dep`.
-
-See:
-
-dep/README.md
-
-
-for dependency management strategy.
-
----
-
-## Documentation
-
-All architectural and design documentation lives in:
-
-docs/
-
-
-Start with:
-
-docs/README.md
-
-
----
-
-## Philosophy
-
-This repository aims to:
-
-- Keep implementation separate from interface
-- Keep build artefacts separate from source
-- Support both standalone and reusable component development
-- Scale from small utilities to large modular systems
-
----
-
-## Licence
-
-See `LICENSE`.
+- `src/README.md`
+- `docs/README.md`
+- `dep/README.md`
