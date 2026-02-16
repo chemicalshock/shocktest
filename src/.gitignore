@@ -1,0 +1,20 @@
+# final output
+/bld/
+
+# intermediate source build
+/src/bld/
+/src/tst/bld/
+
+# objects
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.exe
+
+# misc
+*.log
+.vscode/
+.idea/
