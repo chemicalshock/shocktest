@@ -38,7 +38,7 @@ TST_OBJ_DIR := $(TST_DIR)/bld
 # -----------------------------------
 DEP_ROOT := dep
 DEP_MAP_DIR := $(OBJ_DIR)/depinc
-DEP_NAMES := $(notdir $(wildcard $(DEP_ROOT)/*))
+DEP_NAMES := $(shell [ -d "$(DEP_ROOT)" ] && find "$(DEP_ROOT)" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; || true)
 DEP_INC_DIRS := $(wildcard $(DEP_ROOT)/*/src/inc)
 DEP_INC_FLAGS := $(foreach dir,$(DEP_INC_DIRS),-I$(dir))
 
@@ -117,18 +117,13 @@ LIB_SOURCES := $(LIB_CPP_SOURCES) $(LIB_C_SOURCES) $(LIB_S_SOURCES)
 BIN_OBJECTS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(BIN_SOURCES))
 LIB_CPP_OBJECTS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(LIB_CPP_SOURCES))
 LIB_C_OBJECTS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(LIB_C_SOURCES))
+LIB_CPP_PIC_OBJECTS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.pic.o,$(LIB_CPP_SOURCES))
+LIB_C_PIC_OBJECTS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.pic.o,$(LIB_C_SOURCES))
 
 LIB_OBJECTS := $(LIB_CPP_OBJECTS) $(LIB_C_OBJECTS)
-ALL_OBJECTS := $(BIN_OBJECTS) $(LIB_OBJECTS)
+LIB_PIC_OBJECTS := $(LIB_CPP_PIC_OBJECTS) $(LIB_C_PIC_OBJECTS)
+ALL_OBJECTS := $(BIN_OBJECTS) $(LIB_OBJECTS) $(LIB_PIC_OBJECTS)
 
-
-# -----------------------------------
-# Rule variables and patterns
-# -----------------------------------
-PIC_CXXFLAGS :=
-ifeq ($(BUILD_SHARED),1)
-  PIC_CXXFLAGS := -fPIC
-endif
 
 # -----------------------------------
 # Verbose mode
@@ -150,17 +145,29 @@ $(OBJ_DIR)/bin/%.o: $(BIN_DIR)/%.cpp
 	$(Q)echo "C++ (bin): $<"
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MT $@ -MF $(@:.o=.d) -c $< -o $@
 
-# C++ sources in src/lib (PIC if BUILD_SHARED=1)
+# C++ sources in src/lib
 $(OBJ_DIR)/lib/%.o: $(LIB_DIR)/%.cpp
 	$(Q)mkdir -p $(dir $@)
 	$(Q)echo "C++ (lib): $<"
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(PIC_CXXFLAGS) -MT $@ -MF $(@:.o=.d) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MT $@ -MF $(@:.o=.d) -c $< -o $@
 
-# C sources anywhere under src/lib (PIC if BUILD_SHARED=1)
+# C sources in src/lib
 $(OBJ_DIR)/lib/%.o: $(LIB_DIR)/%.c
 	$(Q)mkdir -p $(dir $@)
 	$(Q)echo "C (lib): $<"
-	$(CXX) $(CPPFLAGS) $(PIC_CXXFLAGS) -x c -MT $@ -MF $(@:.o=.d) -c $< -o $@
+	$(CXX) $(CPPFLAGS) -x c -MT $@ -MF $(@:.o=.d) -c $< -o $@
+
+# C++ sources in src/lib compiled with PIC for shared library target
+$(OBJ_DIR)/lib/%.pic.o: $(LIB_DIR)/%.cpp
+	$(Q)mkdir -p $(dir $@)
+	$(Q)echo "C++ (lib,pic): $<"
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -fPIC -MT $@ -MF $(@:.o=.d) -c $< -o $@
+
+# C sources in src/lib compiled with PIC for shared library target
+$(OBJ_DIR)/lib/%.pic.o: $(LIB_DIR)/%.c
+	$(Q)mkdir -p $(dir $@)
+	$(Q)echo "C (lib,pic): $<"
+	$(CXX) $(CPPFLAGS) -fPIC -x c -MT $@ -MF $(@:.o=.d) -c $< -o $@
 
 
 
@@ -196,9 +203,9 @@ $(STATIC_OUT): $(LIB_OBJECTS) | $(OUT_DIR)
 # -----------------------------------
 # Shared library
 # -----------------------------------
-shared: dec-incmap $(SHARED_OUT)
+shared: dep-incmap $(SHARED_OUT)
 
-$(SHARED_OUT): $(LIB_OBJECTS) | $(OUT_DIR)
+$(SHARED_OUT): $(LIB_PIC_OBJECTS) | $(OUT_DIR)
 	$(Q)echo "Link (shared): $@"
 	$(Q)$(CXX) -shared $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
@@ -268,9 +275,11 @@ tests: ut sy
 
 clean-all:
 	$(Q)echo "Cleaning build artefacts..."
-	$(Q)rm -rf "$(OBJ_DIR)"
-	$(Q)rm -rf "$(TST_OBJ_DIR)"
-	$(Q)rm -rf "$(OUT_DIR)"
+	$(Q)for d in "$(OBJ_DIR)" "$(TST_OBJ_DIR)" "$(OUT_DIR)"; do \
+		mkdir -p "$$d"; \
+		find "$$d" -mindepth 1 \( -type f -o -type l \) ! -name ".gitignore" -delete; \
+		find "$$d" -mindepth 1 -type d -empty -delete; \
+	done
 
 clean-tests:
 	@if [ -f "$(TST_UT_DIR)/Makefile" ] || [ -f "$(TST_UT_DIR)/makefile" ]; then \
