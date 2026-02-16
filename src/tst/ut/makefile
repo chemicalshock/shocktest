@@ -201,7 +201,9 @@ viewdeps:
 
 clean:
 	@echo Cleaning unit test build output...
-	@rm -rf $(BUILD_DIR)
+	@mkdir -p "$(BUILD_DIR)"
+	@find "$(BUILD_DIR)" -mindepth 1 -maxdepth 1 ! -name '.gitignore' -exec rm -rf {} +
+	@touch "$(BUILD_DIR)/.gitignore"
 
 .PHONY: tests run clean
 
