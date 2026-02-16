@@ -10,11 +10,16 @@ all: tests
 
 .DEFAULT_GOAL := tests
 ROOT_DIR := $(abspath ../../..)
-BUILD_DIR := $(CURDIR)/bld
+BUILD_DIR := $(ROOT_DIR)/src/tst/ut/bld
+DEP_ROOT := $(ROOT_DIR)/dep
+DEP_MAP_DIR := $(ROOT_DIR)/src/tst/ut/bld/depinc
+DEP_NAMES := $(shell [ -d "$(DEP_ROOT)" ] && for p in "$(DEP_ROOT)"/*; do [ -d "$$p" ] && basename "$$p"; done || true)
+DEP_INC_DIRS := $(wildcard $(DEP_ROOT)/*/src/inc)
+DEP_INC_FLAGS := $(foreach dir,$(DEP_INC_DIRS),-I$(dir))
 
 # Compiler config
 CXX ?= g++
-GLOBAL_CPPFLAGS := -I$(ROOT_DIR)/src/inc -I$(ROOT_DIR)/dep
+GLOBAL_CPPFLAGS := -I$(ROOT_DIR)/src/inc $(DEP_INC_FLAGS) -I$(DEP_MAP_DIR)
 CXXFLAGS := -std=c++20 -Wall -Wextra -Wno-unknown-pragmas
 LDFLAGS :=
 
@@ -114,6 +119,16 @@ $(foreach tgt,$(X86CPPTARGET),$(eval $(call MAKE_TEST_TARGET,$(tgt))))
 #  Targets
 # ==============================
 
+dep-incmap:
+	@mkdir -p "$(DEP_MAP_DIR)"
+	@for d in $(DEP_NAMES); do \
+		if [ -d "$(DEP_ROOT)/$$d/src/inc/$$d" ]; then \
+			ln -sfn "$(DEP_ROOT)/$$d/src/inc/$$d" "$(DEP_MAP_DIR)/$$d"; \
+		elif [ -d "$(DEP_ROOT)/$$d/src/inc" ]; then \
+			ln -sfn "$(DEP_ROOT)/$$d/src/inc" "$(DEP_MAP_DIR)/$$d"; \
+		fi; \
+	done
+
 debugdeps:
 	@echo "Resolved dependencies per test target:"
 	@$(foreach t,$(X86CPPTARGET), \
@@ -140,7 +155,7 @@ testlist:
 	@echo "Available test targets:"
 	@$(foreach t,$(X86CPPTARGET), echo "• $(t)";)	
 
-tests: $(BUILD_DIR) \
+tests: dep-incmap $(BUILD_DIR) \
   $(foreach t,$(X86CPPTARGETSOL),$(BUILD_DIR)/$t) \
   $(foreach t,$(X86CPPTARGET),$(BUILD_DIR)/$t)
 
@@ -206,7 +221,7 @@ clean:
 	@find "$(BUILD_DIR)" -mindepth 1 -maxdepth 1 ! -name '.gitignore' -exec rm -rf {} +
 	@touch "$(BUILD_DIR)/.gitignore"
 
-.PHONY: tests run clean
+.PHONY: dep-incmap tests run clean
 
 %::
 	@:
