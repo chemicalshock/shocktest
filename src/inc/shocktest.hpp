@@ -121,6 +121,39 @@ inline int run_all() {
     return failures;
 }
 
+//
+//!\brief Captures output written to a standard stream while executing fn.
+//
+template <typename Fn>
+inline std::string capture_stream(std::ostream& stream, Fn&& fn) {
+    std::ostringstream sink;
+    std::streambuf* old_buf = stream.rdbuf(sink.rdbuf());
+    try {
+        fn();
+    } catch (...) {
+        stream.rdbuf(old_buf);
+        throw;
+    }
+    stream.rdbuf(old_buf);
+    return sink.str();
+}
+
+//
+//!\brief Verifies captured output from a named stream matches expected text.
+//
+inline void expect_stream_eq(
+    const char* stream_name,
+    const std::string& actual,
+    const std::string& expected
+) {
+    if (actual != expected) {
+        std::ostringstream oss;
+        oss << stream_name << " mismatch. Expected: \"" << expected
+            << "\", got: \"" << actual << "\"";
+        throw std::runtime_error(oss.str());
+    }
+}
+
 
 // --- Macros ---
 
@@ -271,6 +304,26 @@ inline int run_all() {
         catch (...) { thrown = true; }                                           \
         if (!thrown)                                                             \
             throw std::runtime_error("Expected exception but none was thrown"); \
+    } while (0)
+
+//
+//!\brief expects std::cout output produced by stmt to match expected
+//
+#define EXPECT_STDCOUT(stmt, expected)                                           \
+    do {                                                                         \
+        const std::string _shocktest_actual =                                    \
+            shocktest::capture_stream(std::cout, [&]() { stmt; });               \
+        shocktest::expect_stream_eq("std::cout", _shocktest_actual, (expected)); \
+    } while (0)
+
+//
+//!\brief expects std::cerr output produced by stmt to match expected
+//
+#define EXPECT_STDCERR(stmt, expected)                                           \
+    do {                                                                         \
+        const std::string _shocktest_actual =                                    \
+            shocktest::capture_stream(std::cerr, [&]() { stmt; });               \
+        shocktest::expect_stream_eq("std::cerr", _shocktest_actual, (expected)); \
     } while (0)
 
 

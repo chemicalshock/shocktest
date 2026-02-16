@@ -70,3 +70,33 @@ SHOCKTEST_CASE(ExpectEqEvaluatesOnce) {
     EXPECT_EQ(++v, 1);
     EXPECT_EQ(v, 1);
 }
+
+//
+//!\brief Verifies EXPECT_STDCOUT captures and compares stdout text.
+//
+SHOCKTEST_CASE(ExpectStdCoutMatchesOutput) {
+    EXPECT_STDCOUT(std::cout << "alpha", "alpha");
+}
+
+//
+//!\brief Verifies EXPECT_STDCERR captures and compares stderr text.
+//
+SHOCKTEST_CASE(ExpectStdCerrMatchesOutput) {
+    EXPECT_STDCERR(std::cerr << "bravo", "bravo");
+}
+
+//
+//!\brief Verifies EXPECT_STDCOUT executes the statement exactly once.
+//
+SHOCKTEST_CASE(ExpectStdCoutEvaluatesOnce) {
+    int v = 0;
+    EXPECT_STDCOUT(std::cout << ++v, "1");
+    EXPECT_EQ(v, 1);
+}
+
+//
+//!\brief Verifies EXPECT_STDCOUT throws when output does not match expected.
+//
+SHOCKTEST_CASE(ExpectStdCoutMismatchThrows) {
+    EXPECT_THROW(EXPECT_STDCOUT(std::cout << "charlie", "delta"));
+}
