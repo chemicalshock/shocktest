@@ -9,7 +9,9 @@
 all: tests
 
 .DEFAULT_GOAL := tests
-ROOT_DIR := $(abspath ../../..)
+SHOCKTEST_UT_MK  := $(abspath $(lastword $(MAKEFILE_LIST)))
+SHOCKTEST_UT_DIR := $(dir $(SHOCKTEST_UT_MK))
+ROOT_DIR ?= $(abspath $(SHOCKTEST_UT_DIR)/../../..)
 BUILD_DIR := $(ROOT_DIR)/src/tst/ut/bld
 DEP_ROOT := $(ROOT_DIR)/dep
 DEP_MAP_DIR := $(ROOT_DIR)/src/tst/ut/bld/depinc
@@ -19,9 +21,9 @@ DEP_INC_FLAGS := $(foreach dir,$(DEP_INC_DIRS),-I$(dir))
 
 # Compiler config
 CXX ?= g++
-GLOBAL_CPPFLAGS := -I$(ROOT_DIR)/src/inc $(DEP_INC_FLAGS) -I$(DEP_MAP_DIR)
-CXXFLAGS := -std=c++20 -Wall -Wextra -Wno-unknown-pragmas
-LDFLAGS :=
+GLOBAL_CPPFLAGS ?= -I$(ROOT_DIR)/src/inc $(DEP_INC_FLAGS) -I$(DEP_MAP_DIR)
+CXXFLAGS ?= -std=c++20 -Wall -Wextra -Wno-unknown-pragmas
+LDFLAGS ?=
 
 # ==============================
 #  SUT Definitions
@@ -88,7 +90,7 @@ $(BUILD_DIR):
 define MAKE_SUT_TARGET
 $(BUILD_DIR)/$(1): $$($(1),SRCS) $$(addprefix $(BUILD_DIR)/,$$($(1),USRLIBS)) | $(BUILD_DIR)
 	@echo "[SUT] Compiling: $(BUILD_DIR)/$(1)"
-	$$(CXX) $(CXXFLAGS) $$($(1),CPPFLAGS) -c -o $$@ $$^
+	$$(CXX) $(CXXFLAGS) $$(if $$(strip $$($(1),CPPFLAGS)),$$($(1),CPPFLAGS),$(GLOBAL_CPPFLAGS)) -c -o $$@ $$^
 endef
 
 # --- Test Rule Generator ---
@@ -104,7 +106,7 @@ $$(foreach d,$$(sort $$(strip \
   $$(foreach l,$$($(1),USRLIBS),$$(call resolve_deps,$$l) $$l)\
 )),$$(BUILD_DIR)/$$d) | $(BUILD_DIR)
 	@echo "[TEST] Compiling: $(BUILD_DIR)/$(1)"
-	$$(CXX) $(CXXFLAGS) $$($(1),CPPFLAGS) -o $$@ $$^ $$($(1),LDFLAGS) $(LDFLAGS)
+	$$(CXX) $(CXXFLAGS) $$(if $$(strip $$($(1),CPPFLAGS)),$$($(1),CPPFLAGS),$(GLOBAL_CPPFLAGS)) -o $$@ $$^ $$($(1),LDFLAGS) $(LDFLAGS)
 endef
 
 
