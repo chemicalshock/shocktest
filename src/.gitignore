@@ -4,6 +4,7 @@
 # intermediate source build
 /src/bld/
 /src/tst/bld/
+tst/ut/bld/
 
 # objects
 *.o

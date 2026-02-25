@@ -11,7 +11,9 @@ all: tests
 .DEFAULT_GOAL := tests
 SHOCKTEST_UT_MK  := $(abspath $(lastword $(MAKEFILE_LIST)))
 SHOCKTEST_UT_DIR := $(dir $(SHOCKTEST_UT_MK))
-ROOT_DIR ?= $(abspath $(SHOCKTEST_UT_DIR)/../../..)
+SHOCKTEST_UT_ENTRY_MK := $(abspath $(firstword $(MAKEFILE_LIST)))
+SHOCKTEST_UT_ENTRY_DIR := $(dir $(SHOCKTEST_UT_ENTRY_MK))
+ROOT_DIR ?= $(or $(REPO_ROOT),$(abspath $(SHOCKTEST_UT_ENTRY_DIR)/../../..))
 BUILD_DIR := $(ROOT_DIR)/src/tst/ut/bld
 DEP_ROOT := $(ROOT_DIR)/dep
 DEP_MAP_DIR := $(ROOT_DIR)/src/tst/ut/bld/depinc

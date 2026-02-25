@@ -12,7 +12,7 @@
 #
 # project identification
 #
-PROJECT ?= cpp-template
+PROJECT ?= shocktest
 
 BIN_NAME ?= $(PROJECT)
 LIB_BASENAME ?= $(PROJECT)
@@ -35,3 +35,5 @@ USER_CPPFLAGS +=
 USER_CXXFLAGS +=
 USER_LDFLAGS +=
 USER_LDLIBS +=
+
+include dep/makeshift/makeshift.mk

@@ -81,21 +81,35 @@ inline int run_all() {
             auto end = steady_clock::now();
             auto dt = duration_cast<milliseconds>(end - start).count();
             total_time_ms += dt;
-            std::cout << LABEL_PASS << " " << weatherLabel << test.name << " (" << dt << " ms)" << std::endl;
+            if (test.expect_fail) {
+                std::cout << "\n" << LABEL_FAIL << " " << weatherLabel << test.name
+                          << " - expected failure but none was thrown (" << dt << " ms)" << std::endl;
+                ++failures;
+            } else {
+                std::cout << LABEL_PASS << " " << weatherLabel << test.name << " (" << dt << " ms)" << std::endl;
+            }
         } catch (const std::exception& e) {
             auto end = steady_clock::now();
             auto dt = duration_cast<milliseconds>(end - start).count();
             total_time_ms += dt;
-            std::cout << "\n" << LABEL_FAIL << " " << weatherLabel << test.name 
-                      << " - " << e.what() << " (" << dt << " ms)" << std::endl;
-            ++failures;
+            if (test.expect_fail) {
+                std::cout << LABEL_PASS << " " << weatherLabel << test.name << " (" << dt << " ms) - " << e.what() << std::endl;
+            } else {
+                std::cout << "\n" << LABEL_FAIL << " " << weatherLabel << test.name
+                          << " - " << e.what() << " (" << dt << " ms)" << std::endl;
+                ++failures;
+            }
         } catch (...) {
             auto end = steady_clock::now();
             auto dt = duration_cast<milliseconds>(end - start).count();
             total_time_ms += dt;
-            std::cout << "\n" << LABEL_FAIL << " " << weatherLabel << test.name 
-                      << " - unknown error (" << dt << " ms)" << std::endl;
-            ++failures;
+            if (test.expect_fail) {
+                std::cout << LABEL_PASS << " " << weatherLabel << test.name << " (" << dt << " ms) - unknown error" << std::endl;
+            } else {
+                std::cout << "\n" << LABEL_FAIL << " " << weatherLabel << test.name
+                          << " - unknown error (" << dt << " ms)" << std::endl;
+                ++failures;
+            }
         }
     }
 
