@@ -175,16 +175,20 @@ run:
 			exit 1; \
 		fi; \
 	else \
-		echo "Running all unit tests..."; \
-		for f in $(X86CPPTARGET); do \
-			bin="$(BUILD_DIR)/$$f"; \
-			if [ -x "$$bin" ]; then \
-				echo "→ Running $$bin"; \
-				"$$bin" || exit 1; \
-			else \
-				echo "Skipping missing or non-executable $$bin"; \
-			fi; \
-		done \
+		if [ -z "$(strip $(X86CPPTARGET))" ]; then \
+			echo "No unit tests found."; \
+		else \
+			echo "Running all unit tests..."; \
+			for f in $(X86CPPTARGET); do \
+				bin="$(BUILD_DIR)/$$f"; \
+				if [ -x "$$bin" ]; then \
+					echo "→ Running $$bin"; \
+					"$$bin" || exit 1; \
+				else \
+					echo "Skipping missing or non-executable $$bin"; \
+				fi; \
+			done; \
+		fi \
 	fi
 
 graphdeps:
