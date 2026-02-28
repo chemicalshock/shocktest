@@ -69,6 +69,44 @@ $(if $($1,DEPS),\
 )
 endef
 
+# ==============================
+#  Source path resolution
+# ==============================
+
+# If SRCS entry exists as-is, use it.
+# Else if it exists under $(ROOT_DIR)/src/lib/, use that.
+# Else leave it unchanged (supports absolute paths, generated files, etc).
+define resolve_src
+$(strip \
+  $(if $(wildcard $(1)),$(1), \
+    $(if $(wildcard $(ROOT_DIR)/src/lib/$(1)),$(ROOT_DIR)/src/lib/$(1),$(1)) \
+  ) \
+)
+endef
+
+define resolve_srcs
+$(strip $(foreach s,$(1),$(call resolve_src,$(s))))
+endef
+
+# ==============================
+#  Include path auto-mapping
+# ==============================
+
+# If a source is under $(ROOT_DIR)/src/lib/<rel>/file.cpp
+# then add: -I$(ROOT_DIR)/src/inc/<rel>/
+define inc_from_one_src
+$(strip \
+  -I$(dir $(1)) \
+  $(if $(filter $(ROOT_DIR)/src/lib/%,$(1)), \
+    -I$(ROOT_DIR)/src/inc/$(dir $(patsubst $(ROOT_DIR)/src/lib/%,%,$(1))) \
+  ) \
+)
+endef
+
+define inc_from_srcs
+$(strip $(sort $(foreach s,$(1),$(call inc_from_one_src,$(s)))))
+endef
+
 
 # ==============================
 #  Rules
@@ -90,25 +128,24 @@ $(BUILD_DIR):
 
 # --- SUT Rule Generator ---
 define MAKE_SUT_TARGET
-$(BUILD_DIR)/$(1): $$($(1),SRCS) $$(addprefix $(BUILD_DIR)/,$$($(1),USRLIBS)) | $(BUILD_DIR)
+$(BUILD_DIR)/$(1): $$(call resolve_srcs,$$($(1),SRCS)) $$(addprefix $(BUILD_DIR)/,$$($(1),USRLIBS)) | $(BUILD_DIR)
 	@echo "[SUT] Compiling: $(BUILD_DIR)/$(1)"
-	$$(CXX) $(CXXFLAGS) $$(if $$(strip $$($(1),CPPFLAGS)),$$($(1),CPPFLAGS),$(GLOBAL_CPPFLAGS)) -c -o $$@ $$^
+	$$(CXX) $(CXXFLAGS) \
+	  $$(if $$(strip $$($(1),CPPFLAGS)),$$($(1),CPPFLAGS),$(GLOBAL_CPPFLAGS)) \
+	  $$(call inc_from_srcs,$$(call resolve_srcs,$$($(1),SRCS))) \
+	  -c -o $$@ $$(call resolve_srcs,$$($(1),SRCS))
 endef
 
-# --- Test Rule Generator ---
-#define MAKE_TEST_TARGET
-#$(BUILD_DIR)/$(1): $$($(1),SRCS) $$(addprefix $(BUILD_DIR)/,$$($(1),USRLIBS)) | $(BUILD_DIR)
-#	@echo "[TEST] Compiling: $(BUILD_DIR)/$(1)"
-#	$$(CXX) $(CXXFLAGS) $$($(1),CPPFLAGS) -o $$@ $$^ $$($(1),LDFLAGS) $(LDFLAGS)
-#endef
-
 define MAKE_TEST_TARGET
-$(BUILD_DIR)/$(1): $$($(1),SRCS) \
+$(BUILD_DIR)/$(1): $$(call resolve_srcs,$$($(1),SRCS)) \
 $$(foreach d,$$(sort $$(strip \
   $$(foreach l,$$($(1),USRLIBS),$$(call resolve_deps,$$l) $$l)\
 )),$$(BUILD_DIR)/$$d) | $(BUILD_DIR)
 	@echo "[TEST] Compiling: $(BUILD_DIR)/$(1)"
-	$$(CXX) $(CXXFLAGS) $$(if $$(strip $$($(1),CPPFLAGS)),$$($(1),CPPFLAGS),$(GLOBAL_CPPFLAGS)) -o $$@ $$^ $$($(1),LDFLAGS) $(LDFLAGS)
+	$$(CXX) $(CXXFLAGS) \
+	  $$(if $$(strip $$($(1),CPPFLAGS)),$$($(1),CPPFLAGS),$(GLOBAL_CPPFLAGS)) \
+	  $$(call inc_from_srcs,$$(call resolve_srcs,$$($(1),SRCS))) \
+	  -o $$@ $$^ $$($(1),LDFLAGS) $(LDFLAGS)
 endef
 
 
