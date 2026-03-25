@@ -168,6 +168,12 @@ dep-incmap:
 		elif [ -d "$(DEP_ROOT)/$$d/src/inc" ]; then \
 			ln -sfn "$(DEP_ROOT)/$$d/src/inc" "$(DEP_MAP_DIR)/$$d"; \
 		fi; \
+		if [ -d "$(DEP_ROOT)/$$d/bld" ]; then \
+			for so in "$(DEP_ROOT)/$$d"/bld/*.so; do \
+				[ -e "$$so" ] || continue; \
+				ln -sfn "$$so" "$(DEP_MAP_DIR)/$$(basename "$$so")"; \
+			done; \
+		fi; \
 	done
 
 debugdeps:
