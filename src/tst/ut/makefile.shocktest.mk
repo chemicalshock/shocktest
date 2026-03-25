@@ -25,7 +25,7 @@ DEP_INC_FLAGS := $(foreach dir,$(DEP_INC_DIRS),-I$(dir))
 CXX ?= g++
 GLOBAL_CPPFLAGS ?= -I$(ROOT_DIR)/src/inc $(DEP_INC_FLAGS) -I$(DEP_MAP_DIR)
 CXXFLAGS ?= -std=c++20 -Wall -Wextra -Wno-unknown-pragmas
-LDFLAGS ?=
+LDFLAGS ?= -Wl,-rpath,'$(BUILD_DIR)'
 
 # ==============================
 #  SUT Definitions
@@ -66,6 +66,18 @@ X86CPPTARGET ?=
 define resolve_deps
 $(if $($1,DEPS),\
   $(strip $(foreach d,$($1,DEPS),$(call resolve_deps,$(d)) $(d))),\
+)
+endef
+
+define resolve_link_dep
+$(strip \
+  $(if $(filter $(X86CPPTARGETSOL),$(1)), \
+    $(BUILD_DIR)/$(1), \
+    $(if $(wildcard $(BUILD_DIR)/depinc/$(1)), \
+      $(BUILD_DIR)/depinc/$(1), \
+      $(BUILD_DIR)/$(1) \
+    ) \
+  ) \
 )
 endef
 
@@ -140,7 +152,7 @@ define MAKE_TEST_TARGET
 $(BUILD_DIR)/$(1): $$(call resolve_srcs,$$($(1),SRCS)) \
 $$(foreach d,$$(sort $$(strip \
   $$(foreach l,$$($(1),USRLIBS),$$(call resolve_deps,$$l) $$l)\
-)),$$(BUILD_DIR)/$$d) | $(BUILD_DIR)
+)),$$(call resolve_link_dep,$$d)) | $(BUILD_DIR)
 	@echo "[TEST] Compiling: $(BUILD_DIR)/$(1)"
 	$$(CXX) $(CXXFLAGS) \
 	  $$(if $$(strip $$($(1),CPPFLAGS)),$$($(1),CPPFLAGS),$(GLOBAL_CPPFLAGS)) \
@@ -171,7 +183,7 @@ dep-incmap:
 		if [ -d "$(DEP_ROOT)/$$d/bld" ]; then \
 			for so in "$(DEP_ROOT)/$$d"/bld/*.so; do \
 				[ -e "$$so" ] || continue; \
-				ln -sfn "$$so" "$(DEP_MAP_DIR)/$$(basename "$$so")"; \
+				ln -sfn "$$so" "$(BUILD_DIR)/$$(basename "$$so")"; \
 			done; \
 		fi; \
 	done

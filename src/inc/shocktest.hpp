@@ -54,7 +54,8 @@ inline void register_test(const std::string& name, std::function<void()> fn, boo
 //
 // !\brief Runs all tests and prints a weather report.
 //
-inline int run_all() {
+inline int run_all()
+{
     using namespace std::chrono;
 
     // Fixed-width labels for alignment.
@@ -69,43 +70,49 @@ inline int run_all() {
 
     std::cout << LABEL_HEADER << " Running " << total << " tests\n";
 
-    for (const auto& test : registry()) {
+    for (const auto& test : registry())
+    {
         // Simply show BADWEATHER if flagged, otherwise GOODWEATHER.
         std::string weatherLabel = test.expect_fail ? "\033[31mBADWEATHER\033[0m " : "\033[32mGOODWEATHER\033[0m ";
 
         auto start = steady_clock::now();
         std::cout << LABEL_RUN << " " << weatherLabel << test.name << " ... " << std::endl << std::flush;
         
-        try {
+        try
+        {
             test.func();
             auto end = steady_clock::now();
             auto dt = duration_cast<milliseconds>(end - start).count();
             total_time_ms += dt;
-            if (test.expect_fail) {
-                std::cout << "\n" << LABEL_FAIL << " " << weatherLabel << test.name
-                          << " - expected failure but none was thrown (" << dt << " ms)" << std::endl;
-                ++failures;
-            } else {
-                std::cout << LABEL_PASS << " " << weatherLabel << test.name << " (" << dt << " ms)" << std::endl;
-            }
-        } catch (const std::exception& e) {
+            std::cout << LABEL_PASS << " " << weatherLabel << test.name << " (" << dt << " ms)" << std::endl;
+        }
+        catch (const std::exception& e)
+        {
             auto end = steady_clock::now();
             auto dt = duration_cast<milliseconds>(end - start).count();
             total_time_ms += dt;
-            if (test.expect_fail) {
+            if (test.expect_fail)
+            {
                 std::cout << LABEL_PASS << " " << weatherLabel << test.name << " (" << dt << " ms) - " << e.what() << std::endl;
-            } else {
+            }
+            else
+            {
                 std::cout << "\n" << LABEL_FAIL << " " << weatherLabel << test.name
                           << " - " << e.what() << " (" << dt << " ms)" << std::endl;
                 ++failures;
             }
-        } catch (...) {
+        }
+        catch (...)
+        {
             auto end = steady_clock::now();
             auto dt = duration_cast<milliseconds>(end - start).count();
             total_time_ms += dt;
-            if (test.expect_fail) {
+            if (test.expect_fail)
+            {
                 std::cout << LABEL_PASS << " " << weatherLabel << test.name << " (" << dt << " ms) - unknown error" << std::endl;
-            } else {
+            }
+            else
+            {
                 std::cout << "\n" << LABEL_FAIL << " " << weatherLabel << test.name
                           << " - unknown error (" << dt << " ms)" << std::endl;
                 ++failures;
@@ -114,9 +121,12 @@ inline int run_all() {
     }
 
     std::cout << LABEL_HEADER << " " << total << " tests ran.\n";
-    if (failures == 0) {
+    if (failures == 0)
+    {
         std::cout << "\033[32m[  PASSED  ]\033[0m " << total << " test(s) (" << total_time_ms << " ms total)" << std::endl;
-    } else {
+    }
+    else
+    {
         std::cout << "\033[31m[  FAILED  ]\033[0m " << failures << " test(s), out of " << total << " (" << total_time_ms << " ms total)" << std::endl;
     }
     return failures;
@@ -129,9 +139,12 @@ template <typename Fn>
 inline std::string capture_stream(std::ostream& stream, Fn&& fn) {
     std::ostringstream sink;
     std::streambuf* old_buf = stream.rdbuf(sink.rdbuf());
-    try {
+    try
+    {
         fn();
-    } catch (...) {
+    }
+    catch (...)
+    {
         stream.rdbuf(old_buf);
         throw;
     }
@@ -147,7 +160,8 @@ inline void expect_stream_eq(
     const std::string& actual,
     const std::string& expected
 ) {
-    if (actual != expected) {
+    if (actual != expected)
+    {
         std::ostringstream oss;
         oss << stream_name << " mismatch. Expected: \"" << expected
             << "\", got: \"" << actual << "\"";
