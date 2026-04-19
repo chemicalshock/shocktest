@@ -1,5 +1,5 @@
 # -------------------------------------------------------------
-# Unit Test Build System (for src/tst/ut)
+# Unit Test Build System
 # -------------------------------------------------------------
 # Builds all SUTs and test binaries into ./bld/
 # Usage: make, make tests, make run, make clean
@@ -13,10 +13,16 @@ SHOCKTEST_UT_MK  := $(abspath $(lastword $(MAKEFILE_LIST)))
 SHOCKTEST_UT_DIR := $(dir $(SHOCKTEST_UT_MK))
 SHOCKTEST_UT_ENTRY_MK := $(abspath $(firstword $(MAKEFILE_LIST)))
 SHOCKTEST_UT_ENTRY_DIR := $(dir $(SHOCKTEST_UT_ENTRY_MK))
-ROOT_DIR ?= $(or $(REPO_ROOT),$(abspath $(SHOCKTEST_UT_ENTRY_DIR)/../../..))
-BUILD_DIR := $(ROOT_DIR)/src/tst/ut/bld
+
+root_dir_has_project_shape = $(if $(wildcard $(1)/src/inc),$(1))
+ROOT_DIR_CANDIDATES := $(ROOT_DIR) $(REPO_ROOT) $(abspath $(SHOCKTEST_UT_ENTRY_DIR)/../..) $(abspath $(SHOCKTEST_UT_ENTRY_DIR)/../../..)
+DETECTED_ROOT_DIR := $(firstword $(foreach dir,$(ROOT_DIR_CANDIDATES),$(if $(call root_dir_has_project_shape,$(dir)),$(dir))))
+ROOT_DIR := $(if $(DETECTED_ROOT_DIR),$(DETECTED_ROOT_DIR),$(firstword $(ROOT_DIR_CANDIDATES)))
+
+TEST_DIR ?= $(patsubst %/,%,$(SHOCKTEST_UT_ENTRY_DIR))
+BUILD_DIR ?= $(TEST_DIR)/bld
 DEP_ROOT := $(ROOT_DIR)/dep
-DEP_MAP_DIR := $(ROOT_DIR)/src/tst/ut/bld/depinc
+DEP_MAP_DIR ?= $(BUILD_DIR)/depinc
 DEP_NAMES := $(shell [ -d "$(DEP_ROOT)" ] && for p in "$(DEP_ROOT)"/*; do [ -d "$$p" ] && basename "$$p"; done || true)
 DEP_INC_DIRS := $(wildcard $(DEP_ROOT)/*/src/inc)
 DEP_INC_FLAGS := $(foreach dir,$(DEP_INC_DIRS),-I$(dir))
@@ -73,8 +79,8 @@ define resolve_link_dep
 $(strip \
   $(if $(filter $(X86CPPTARGETSOL),$(1)), \
     $(BUILD_DIR)/$(1), \
-    $(if $(wildcard $(BUILD_DIR)/depinc/$(1)), \
-      $(BUILD_DIR)/depinc/$(1), \
+    $(if $(wildcard $(DEP_MAP_DIR)/$(1)), \
+      $(DEP_MAP_DIR)/$(1), \
       $(BUILD_DIR)/$(1) \
     ) \
   ) \
@@ -86,12 +92,15 @@ endef
 # ==============================
 
 # If SRCS entry exists as-is, use it.
+# Else if it exists relative to the entry makefile, use that.
 # Else if it exists under $(ROOT_DIR)/src/lib/, use that.
 # Else leave it unchanged (supports absolute paths, generated files, etc).
 define resolve_src
 $(strip \
   $(if $(wildcard $(1)),$(1), \
-    $(if $(wildcard $(ROOT_DIR)/src/lib/$(1)),$(ROOT_DIR)/src/lib/$(1),$(1)) \
+    $(if $(wildcard $(SHOCKTEST_UT_ENTRY_DIR)$(1)),$(SHOCKTEST_UT_ENTRY_DIR)$(1), \
+      $(if $(wildcard $(ROOT_DIR)/src/lib/$(1)),$(ROOT_DIR)/src/lib/$(1),$(1)) \
+    ) \
   ) \
 )
 endef
